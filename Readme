@@ -1,0 +1,23 @@
+# TodoMVC Automation Tests
+
+Selenium + Java + TestNG automation framework for TodoMVC.
+
+## Tech Stack
+
+- Java 17
+- Selenium WebDriver
+- TestNG
+- Maven
+- WebDriverManager
+- Allure Reporting
+
+## Frameworks Covered
+
+- React
+- Vue
+- Angular
+
+## Run Tests
+
+```bash
+mvn clean test
