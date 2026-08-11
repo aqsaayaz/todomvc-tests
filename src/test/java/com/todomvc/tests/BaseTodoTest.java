@@ -15,6 +15,10 @@ import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.LoggingPreferences;
+
+import java.util.logging.Level;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -49,8 +53,12 @@ public abstract class BaseTodoTest {
                 : TestConfig.getFramework();
         seed = TestConfig.getSeed();
 
-        WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
+
+        LoggingPreferences loggingPreferences = new LoggingPreferences();
+        loggingPreferences.enable(LogType.PERFORMANCE, Level.ALL);
+        options.setCapability("goog:loggingPrefs", loggingPreferences);
+
         if (TestConfig.isHeadless()) {
             options.addArguments("--headless=new");
         }

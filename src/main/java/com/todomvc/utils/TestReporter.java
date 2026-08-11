@@ -2,6 +2,8 @@ package com.todomvc.utils;
 
 import com.todomvc.models.Todo;
 import io.qameta.allure.Allure;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.logging.LogType;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.List;
+
 
 /**
  * On any assertion failure, captures everything needed to reproduce and
@@ -89,5 +92,79 @@ public class TestReporter {
             sb.append(String.format("  [%s] %s%n", t.isCompleted() ? "x" : " ", t.getText()));
         }
         return sb.toString();
+    }
+
+    public static Path saveBrowserTrace(WebDriver driver,
+                                        String framework,
+                                        long seed) {
+        try {
+            Path traceDir = Paths.get("target", "traces");
+            Files.createDirectories(traceDir);
+
+            String timestamp = LocalDateTime.now().format(TS);
+
+            Path traceJson = traceDir.resolve(
+                    framework + "-" + seed + "-" + timestamp + "-performance.json"
+            );
+
+            StringBuilder output = new StringBuilder();
+            output.append("{\n");
+            output.append("  \"framework\": \"")
+                    .append(framework)
+                    .append("\",\n");
+            output.append("  \"seed\": ")
+                    .append(seed)
+                    .append(",\n");
+            output.append("  \"events\": [\n");
+
+            var logs = driver.manage().logs().get(LogType.PERFORMANCE).getAll();
+
+            for (int i = 0; i < logs.size(); i++) {
+                output.append("    ")
+                        .append(logs.get(i).getMessage());
+
+                if (i < logs.size() - 1) {
+                    output.append(",");
+                }
+
+                output.append("\n");
+            }
+
+            output.append("  ]\n");
+            output.append("}\n");
+
+            Files.writeString(
+                    traceJson,
+                    output.toString(),
+                    StandardCharsets.UTF_8
+            );
+
+            Path traceZip = traceDir.resolve(
+                    framework + "-" + seed + "-" + timestamp + ".trace.zip"
+            );
+
+            try (java.util.zip.ZipOutputStream zip =
+                         new java.util.zip.ZipOutputStream(
+                                 Files.newOutputStream(traceZip))) {
+
+                zip.putNextEntry(
+                        new java.util.zip.ZipEntry("performance-trace.json")
+                );
+
+                zip.write(
+                        Files.readAllBytes(traceJson)
+                );
+
+                zip.closeEntry();
+            }
+
+            return traceZip;
+
+        } catch (Exception e) {
+            System.err.println(
+                    "Unable to save browser trace: " + e.getMessage()
+            );
+            return null;
+        }
     }
 }
