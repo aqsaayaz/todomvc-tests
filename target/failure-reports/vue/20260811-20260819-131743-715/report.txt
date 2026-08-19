@@ -1,0 +1,15 @@
+=== TodoMVC Cross-Framework Test Failure Report ===
+Framework: vue
+Seed: 20260811
+Failing action index: 1
+
+--- Action history (in order) ---
+0: ADD(text="call mom #1")
+1: RELOAD <-- FAILED HERE
+
+--- Expected state ---
+  [ ] call mom #1
+remaining=1, filter=ALL
+
+--- Actual state ---
+texts=[], completed=[], remaining=0, filter=ALL

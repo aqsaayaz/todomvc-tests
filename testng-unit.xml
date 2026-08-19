@@ -1,0 +1,18 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+  Unit-only suite: runs just TodoModelTest (no WebDriver, no browser,
+  no network calls to a live TodoMVC app). This is what CI runs on
+  every push/PR, separately from the full Selenium cross-framework
+  suite in testng.xml (which needs a real browser + reachable app URLs
+  and is meant to be run in an environment that has those).
+
+  Run locally with:
+    mvn test -DsuiteXmlFile=testng-unit.xml
+-->
+<suite name="TodoMVC-Unit-Suite" verbose="1">
+    <test name="TodoModelUnitTests">
+        <classes>
+            <class name="com.todomvc.tests.unit.TodoModelTest"/>
+        </classes>
+    </test>
+</suite>

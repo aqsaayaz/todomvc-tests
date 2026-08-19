@@ -1,0 +1,13 @@
+com\todomvc\enums\Framework.class
+com\todomvc\models\TodoModel.class
+com\todomvc\models\Todo.class
+com\todomvc\utils\TestReporter.class
+com\todomvc\config\TestConfig.class
+com\todomvc\utils\Action$ActionType.class
+com\todomvc\pages\TodoPage.class
+com\todomvc\generators\ActionGenerator.class
+com\todomvc\generators\ActionGenerator$1.class
+com\todomvc\models\TodoModel$1.class
+com\todomvc\enums\FilterType.class
+com\todomvc\utils\Action.class
+com\todomvc\pages\TodoPage$1.class

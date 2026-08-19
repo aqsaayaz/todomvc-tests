@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    name: Unit tests (TodoModel)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      # Only the browser-free unit suite runs here (testng-unit.xml).
+      # The full Selenium cross-framework suite (testng.xml) needs a
+      # real browser + reachable TodoMVC app URLs, so it's kept out of
+      # this fast CI job on purpose.
+      - name: Run unit tests
+        run: mvn -B test -DsuiteXmlFile=testng-unit.xml
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          if-no-files-found: ignore

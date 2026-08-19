@@ -49,65 +49,20 @@ public class TodoPage {
     }
 
     public void reload() {
-        // React (and, to a lesser extent, Vue/Angular) persist todos to
-        // localStorage from a post-render effect, not synchronously with the
-        // DOM update we already wait on in addTodo/editTodo/etc. Refreshing
-        // immediately after a mutation can race that write and silently
-        // lose the change. We don't hardcode a storage key (that would be
-        // framework-specific); instead we poll ALL of localStorage until two
-        // consecutive reads are identical, i.e. no write happened in this
-        // polling interval - a generic, condition-based quiescence check
-        // rather than a fixed sleep.
-        waitForLocalStorageToStabilize();
         driver.navigate().refresh();
         wait.until(ExpectedConditions.presenceOfElementLocated(NEW_TODO_INPUT));
-    }
-
-    private void waitForLocalStorageToStabilize() {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        String snapshotScript =
-                "var o = {}; " +
-                        "for (var i = 0; i < localStorage.length; i++) { " +
-                        "  var k = localStorage.key(i); o[k] = localStorage.getItem(k); " +
-                        "} " +
-                        "return JSON.stringify(o);";
-
-        WebDriverWait stabilityWait = new WebDriverWait(driver, Duration.ofSeconds(3));
-        stabilityWait.pollingEvery(Duration.ofMillis(50));
-
-        final String[] previous = {(String) js.executeScript(snapshotScript)};
-        stabilityWait.until(d -> {
-            String current = (String) js.executeScript(snapshotScript);
-            boolean stable = current.equals(previous[0]);
-            previous[0] = current;
-            return stable;
-        });
     }
 
     // ---- actions ----
 
     public void addTodo(String text) {
-        WebElement input = wait.until(
-                ExpectedConditions.elementToBeClickable(NEW_TODO_INPUT)
-        );
-
-        input.click();
+        WebElement input = wait.until(ExpectedConditions.elementToBeClickable(NEW_TODO_INPUT));
+        int before = getItemElements().size();
         input.sendKeys(text);
         input.sendKeys(Keys.ENTER);
-
-        wait.until(d -> !d.findElements(TODO_ITEMS).isEmpty());
-
-        wait.until(d -> d.findElements(TODO_ITEMS).stream()
-                .anyMatch(item -> {
-                    try {
-                        return item.findElement(By.cssSelector("label"))
-                                .getText()
-                                .equals(text);
-                    } catch (StaleElementReferenceException e) {
-                        return false;
-                    }
-                }));
+        wait.until(d -> getItemElements().size() == before + 1);
     }
+
     public void editTodo(int visibleIndex, String newText) {
         WebElement item = getItemElements().get(visibleIndex);
         Actions builder = new Actions(driver);
@@ -128,31 +83,18 @@ public class TodoPage {
     }
 
     public void toggleAll() {
-        List<WebElement> items = getItemElements();
-
-        if (items.isEmpty()) {
-            return;
-        }
-
-        boolean allCompletedBefore =
-                items.stream().allMatch(this::isItemCompleted);
-
-        WebElement toggleAll =
-                wait.until(ExpectedConditions.elementToBeClickable(TOGGLE_ALL));
-
+        int before = getItemElements().size();
+        WebElement toggleAll = wait.until(ExpectedConditions.elementToBeClickable(TOGGLE_ALL));
         toggleAll.click();
-
-        boolean expectedCompleted = !allCompletedBefore;
-
+        // wait for all visible items to reach a consistent completed state
         wait.until(d -> {
-            List<WebElement> currentItems = getItemElements();
-
-            return currentItems.size() == items.size()
-                    && currentItems.stream()
-                    .allMatch(item ->
-                            isItemCompleted(item) == expectedCompleted);
+            List<WebElement> items = getItemElements();
+            if (items.isEmpty()) return true;
+            boolean first = isItemCompleted(items.get(0));
+            return items.stream().allMatch(i -> isItemCompleted(i) == first) && items.size() == before;
         });
     }
+
     public void deleteTodo(int visibleIndex) {
         List<WebElement> items = getItemElements();
         WebElement item = items.get(visibleIndex);
@@ -232,12 +174,7 @@ public class TodoPage {
     }
 
     private List<WebElement> getItemElements() {
-        List<WebElement> items = driver.findElements(TODO_ITEMS);
-
-        System.out.println("TODO ITEMS FOUND: " + items.size());
-        System.out.println("CURRENT URL: " + driver.getCurrentUrl());
-
-        return items;
+        return driver.findElements(TODO_ITEMS);
     }
 
     private boolean isItemCompleted(WebElement item) {
